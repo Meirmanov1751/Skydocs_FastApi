@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from src.brd.test.database import engine, SessionLocal, Base
 from src.brd.test.models import Item
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import List
 
 
 Base.metadata.create_all(engine)
@@ -80,10 +81,22 @@ async def delete_item(item_id: int):
     return
 
 
+class ItemDelete(BaseModel):
+    id: int
+
+class ItemsDelete(BaseModel):
+    ids: List[ItemDelete]
+
+
+class DeleteItemsRequest(BaseModel):
+    ids: List[int]
+
+
 @app.delete("/delete_items/")
-async def delete_item(items):
-    print("delete item: ", items)
-    return
+async def delete_items(items: DeleteItemsRequest = Body(...)):
+    print("delete items: ", items.ids)
+    # Здесь вы можете выполнить удаление элементов из вашей базы данных
+    return {"message": "Items deleted successfully"}
 
 '''
 @app.post("/items/")
