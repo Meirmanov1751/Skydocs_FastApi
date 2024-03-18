@@ -84,9 +84,6 @@ async def delete_item(item_id: int):
 class ItemDelete(BaseModel):
     id: int
 
-class ItemsDelete(BaseModel):
-    ids: List[ItemDelete]
-
 
 class DeleteItemsRequest(BaseModel):
     ids: List[int]
@@ -95,6 +92,11 @@ class DeleteItemsRequest(BaseModel):
 @app.delete("/delete_items/")
 async def delete_items(items: DeleteItemsRequest = Body(...)):
     print("delete items: ", items.ids)
+    s = SessionLocal()
+    for item_id in items.ids:
+        print("delete item: ", item_id)
+        s.query(Item).filter(Item.id == item_id).delete()
+    s.commit()
     # Здесь вы можете выполнить удаление элементов из вашей базы данных
     return {"message": "Items deleted successfully"}
 
