@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, File, UploadFile
+from fastapi.responses import JSONResponse
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 from src.brd.test.database import engine, SessionLocal, Base
@@ -44,6 +45,26 @@ class ItemRequest(BaseModel):
     description: str
     price: float
     tax: float
+
+
+@app.post("/upload/")
+async def upload_file(files: List[UploadFile] = File(...)):
+    print("2upload_file started files:", files)
+    count = 0
+    try:
+        for file in files:
+            count = count + 1
+            print("2upload_file file", count, file)
+            print("2upload_file content_type", file.content_type)
+        # Здесь вы можете обработать загруженный файл, например, сохранить его на сервере
+        # или выполнить другие действия с ним
+        ''' print(f'filename>>> {file.filename}')
+        print(f'file>>> {file.file}')
+        return JSONResponse({"filename": file.filename}) '''
+        return JSONResponse({"filename": "test", "ok": "true", "success": "true"})
+    except Exception as e:
+        # Обработка ошибок загрузки файла
+        return print(e)
 
 
 @app.post("/insert/")
