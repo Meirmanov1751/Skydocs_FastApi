@@ -18,5 +18,6 @@ class Attachment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    content_type = Column(String, index=True)
     size = Column(BigInteger, index=True)
-    data = Column(BYTEA)
+    content = Column(BYTEA)

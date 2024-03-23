@@ -1,9 +1,10 @@
 from fastapi import FastAPI, Body, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.params import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy import text
+from sqlalchemy.orm import load_only
 from src.brd.test.database import engine, SessionLocal, Base
-from src.brd.test.models import Item, Attachment
+from src.brd.test.models import Item, Attachment, String, Column
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
@@ -26,6 +27,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+'''
+def add_column_tables():
+    print("add_column_tables start")
+    session = SessionLocal()
+    content_type = Column('content_type', String)
+    Attachment.__table__.append_column(content_type, replace_existing=True)
+    Session.commit()
+
+
+def change_column_tables():
+    session = SessionLocal()
+    print("change_column_tables start")
+    with engine.connect() as connection:
+        result = connection.execute(text("alter table attachments RENAME COLUMN data to content"))
+        result = connection.execute(text("select name from attachments"))
+        for row in result:
+            print("3 attachment name:", row.name)
+    Session.commit()
+
+
+add_column_tables()
+change_column_tables()
+'''
 
 
 @app.get("/")
@@ -59,10 +85,11 @@ async def upload_file(files: List[UploadFile] = File(...)):
             count = count + 1
             print("3upload_file file", count, file)
             print("3upload_file content_type", file.content_type)
-            data = await file.read()
+            content_type = file.content_type
+            content = await file.read()
             file_location = f"d:/files/{file.filename}"
             with open(file_location, "wb+") as file_object:
-                file_object.write(data)
+                file_object.write(content)
             '''    
             print("3upload_file data len", len(data))
             try:
@@ -88,7 +115,8 @@ async def upload_file(files: List[UploadFile] = File(...)):
             attachment = Attachment(
                 name=file.filename,
                 size=file.size,
-                data=data
+                content=content,
+                content_type=content_type
             )
 
             session.add(attachment)
@@ -136,7 +164,7 @@ async def inserted():
 @app.get("/attachments/")
 async def get_att_all():
     s = SessionLocal()
-    r = s.query(Attachment).all()
+    r = s.query(Attachment).options(load_only(Attachment.name, Attachment.size, Attachment.content_type)).all()
     return r
 
 
@@ -144,9 +172,9 @@ async def get_att_all():
 async def get_att_by_id(att_id: int):
     s = SessionLocal()
     r = s.query(Attachment).filter(Attachment.id == att_id).first()
-    ba: bytearray = r.data
+    ba: bytearray = r.content
     print("att_id", att_id, "file", r.name, "data len", len(ba))
-    return r.name
+    return Response(content=ba, media_type=r.content_type)
 
 
 @app.delete("/items/{item_id}")
