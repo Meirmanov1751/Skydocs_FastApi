@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Body, File, UploadFile
+from pathlib import Path
+import shutil
 from fastapi.responses import JSONResponse, Response
 from fastapi.params import Depends
 from sqlalchemy import text
@@ -72,6 +74,18 @@ class ItemRequest(BaseModel):
     price: float
     tax: float
 
+UPLOAD_FOLDER = Path("uploads")
+
+# Создаем папку для загрузок, если она не существует
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+
+@app.post("/uploadFileToLocal/")
+async def upload_file(file: UploadFile = File(...)):
+    # Открываем файл для записи в папку uploads с тем же именем файла
+    with open(UPLOAD_FOLDER / file.filename, "wb") as buffer:
+        # Копируем содержимое загруженного файла в новый файл
+        shutil.copyfileobj(file.file, buffer)
+    return {"filename": file.filename}
 
 @app.post("/upload/")
 async def upload_file(files: List[UploadFile] = File(...)):
